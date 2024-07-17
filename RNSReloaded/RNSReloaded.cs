@@ -191,11 +191,7 @@ public unsafe class RNSReloaded : IRNSReloaded, IDisposable {
 
     public RValue? ExecuteCodeFunction(string name, CInstance* self, CInstance* other, RValue[] arguments) {
         fixed (RValue* ptr = arguments) {
-            var ptrs = new RValue*[arguments.Length];
-            for (var i = 0; i < arguments.Length; i++) ptrs[i] = &ptr[i];
-            fixed (RValue** argv = ptrs) {
-                return this.ExecuteCodeFunction(name, self, other, arguments.Length, argv);
-            }
+            return this.ExecuteCodeFunction(name, self, other, arguments.Length, (RValue**) ptr);
         }
     }
 
