@@ -380,7 +380,7 @@ except ImportError:
     # https://github.com/VDOO-Connected-Trust/ghidra-pyi-generator
     if typing.TYPE_CHECKING:
         from ghidra.ghidra_builtins import *
-
+    if callable(currentProgram): currentProgram = currentProgram()
     # todo lmao
     class GhidraApi(BaseApi):
         def scan(self, signature):
