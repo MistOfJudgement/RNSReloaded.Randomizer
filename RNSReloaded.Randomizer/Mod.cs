@@ -44,6 +44,8 @@ public unsafe class Mod : IMod {
     private Dictionary<string, string> localLanguageMap = new Dictionary<string, string>();
     private IHook<ScriptDelegate>? encounterHook;
     private IHook<ScriptDelegate>? langStringsInitHook;
+    private IHook<ScriptDelegate>? makeWarningHookT;
+    private IHook<ScriptDelegate>? makeWarningHookP;
 
     public void StartEx(IModLoaderV1 loader, IModConfigV1 modConfig) {
         this.hooksRef = loader.GetController<IReloadedHooks>()!;
@@ -69,14 +71,23 @@ public unsafe class Mod : IMod {
     public void Ready() {
         if (this.hooksRef != null && this.hooksRef.TryGetTarget(out var hooks)) {
             this.hooks = hooks;
-            this.encounterHook = this.hookScript("scrdt_encounter", this.EncounterDetour);
+            //this.encounterHook = this.hookScript("scrdt_encounter", this.EncounterDetour);
             this.langStringsInitHook = this.hookScript("scr_lang_strings_init", this.InitStringsDetour);
+            this.makeWarningHookT = this.hookScript("scrbp_warning_msg_t", this.WarningDetour(()=>this.makeWarningHookT));
+            this.makeWarningHookP = this.hookScript("scrbp_warning_msg_p", this.WarningDetour(()=> this.makeWarningHookP));
         } else {
             this.log("Unable to setup hooks, exiting..");
             throw new Exception("Failed to get rnsReloaded");
         }
     }
-
+    private ScriptDelegate WarningDetour(Func<IHook<ScriptDelegate>> originalFunction) {
+        return (self, other, ret, argc, argv) => {
+            this.randomizeInMap();
+            this.rnsReloaded.ExecuteScript("scr_stringsprite_load_all", self, other, 0, null);
+            this.log("refreshing");
+                return originalFunction().OriginalFunction(self, other, ret, argc, argv);
+        };
+    }
     private RValue* InitStringsDetour(CInstance* self, CInstance* other, RValue* returnValue, int argc, RValue** argv) {
         var ret = this.langStringsInitHook!.OriginalFunction(self, other, returnValue, argc, argv);
         this.loadLocalLanguageMap();
@@ -86,7 +97,7 @@ public unsafe class Mod : IMod {
     private IHook<ScriptDelegate> hookScript(string script, ScriptDelegate scriptDelegate) {
         var id = this.rnsReloaded.ScriptFindId(script);
         var scriptData = this.rnsReloaded.GetScriptData(id - 100000);
-        var output = this.hooks.CreateHook<ScriptDelegate>(scriptDelegate, scriptData->Functions->Function);
+        var output = this.hooks.CreateHook(scriptDelegate, scriptData->Functions->Function);
         output.Activate();
         output.Enable();
         return output;
