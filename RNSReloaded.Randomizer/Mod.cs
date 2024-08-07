@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using RNSReloaded;
 using System.Runtime.ExceptionServices;
+using RNSReloaded.Randomizer.Config;
 namespace RNSReloaded.Randomizer;
 
 public unsafe class Mod : IMod {
@@ -36,16 +37,21 @@ public unsafe class Mod : IMod {
     private static readonly Random Random = new Random();
     private WeakReference<IRNSReloaded>? rnsReloadedRef;
     private WeakReference<IReloadedHooks>? hooksRef;
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    private IRNSReloaded rnsReloaded;
-    private IReloadedHooks hooks;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    private IRNSReloaded rnsReloaded = null!;
+    private IReloadedHooks hooks = null!;
     private ILoggerV1 logger = null!;
+    private Utils utils = null!;
+    // This is a copy of the original ds map
     private Dictionary<string, string> localLanguageMap = new Dictionary<string, string>();
+
+    private List<KeyValuePair<string, string>> toReplace = new List<KeyValuePair<string, string>>();
     private IHook<ScriptDelegate>? encounterHook;
     private IHook<ScriptDelegate>? langStringsInitHook;
     private IHook<ScriptDelegate>? makeWarningHookT;
     private IHook<ScriptDelegate>? makeWarningHookP;
+    private IHook<ScriptDelegate> hbsReloadHook;
+    private Configurator configurator = null!;
+    private Config.Config config = null!;
 
     public void StartEx(IModLoaderV1 loader, IModConfigV1 modConfig) {
         this.hooksRef = loader.GetController<IReloadedHooks>()!;
@@ -56,6 +62,14 @@ public unsafe class Mod : IMod {
             rnsReloaded.OnReady += this.Ready;
             this.rnsReloaded = rnsReloaded;
         }
+        this.configurator = new Configurator(((IModLoader) loader).GetModConfigDirectory(modConfig.ModId));
+        this.config = this.configurator.GetConfiguration<Config.Config>(0);
+        this.config.ConfigurationUpdated += this.ConfigurationUpdated;
+        this.utils = new Utils(this.rnsReloaded, this.hooks, this.logger);
+    }
+
+    private void ConfigurationUpdated(IUpdatableConfigurable newConfig) {
+        this.config = (Config.Config) newConfig;
     }
 
     public RValue CreateString(string str) {
@@ -71,10 +85,10 @@ public unsafe class Mod : IMod {
     public void Ready() {
         if (this.hooksRef != null && this.hooksRef.TryGetTarget(out var hooks)) {
             this.hooks = hooks;
-            //this.encounterHook = this.hookScript("scrdt_encounter", this.EncounterDetour);
             this.langStringsInitHook = this.hookScript("scr_lang_strings_init", this.InitStringsDetour);
-            this.makeWarningHookT = this.hookScript("scrbp_warning_msg_t", this.WarningDetour(()=>this.makeWarningHookT));
-            this.makeWarningHookP = this.hookScript("scrbp_warning_msg_p", this.WarningDetour(()=> this.makeWarningHookP));
+            this.makeWarningHookT = this.hookScript("scrbp_warning_msg_t", this.WarningDetour(()=>this.makeWarningHookT!));
+            this.makeWarningHookP = this.hookScript("scrbp_warning_msg_p", this.WarningDetour(()=> this.makeWarningHookP!));
+
         } else {
             this.log("Unable to setup hooks, exiting..");
             throw new Exception("Failed to get rnsReloaded");
@@ -83,6 +97,15 @@ public unsafe class Mod : IMod {
     private ScriptDelegate WarningDetour(Func<IHook<ScriptDelegate>> originalFunction) {
         return (self, other, ret, argc, argv) => {
             this.randomizeInMap();
+            //var HBS = this.utils.CollectMap(Enum.GetName(DataMap.hbsDataKeyMap)!);
+            //var keys = HBS.Keys.ToList();
+            //var values = HBS.Values.ToList();
+            //Utils.Shuffle(values);
+            //for(int i = 0; i<keys.Count;i++) {
+            //    HBS[keys[i]] = values[i];
+            //}
+            //this.utils.applyMap(Enum.GetName(DataMap.hbsDataKeyMap)!, HBS);
+            //this.rnsReloaded.ExecuteScript("scr_langreload_hbs", self, other, 0, null);
             this.rnsReloaded.ExecuteScript("scr_stringsprite_load_all", self, other, 0, null);
             this.log("refreshing");
                 return originalFunction().OriginalFunction(self, other, ret, argc, argv);
@@ -91,12 +114,16 @@ public unsafe class Mod : IMod {
     private RValue* InitStringsDetour(CInstance* self, CInstance* other, RValue* returnValue, int argc, RValue** argv) {
         var ret = this.langStringsInitHook!.OriginalFunction(self, other, returnValue, argc, argv);
         this.loadLocalLanguageMap();
+        this.randomizeInMap();
+
+
+
         return ret;
     }
 
     private IHook<ScriptDelegate> hookScript(string script, ScriptDelegate scriptDelegate) {
         var id = this.rnsReloaded.ScriptFindId(script);
-        var scriptData = this.rnsReloaded.GetScriptData(id - 100000);
+        var scriptData = this.rnsReloaded.GetScriptData(id - 100_000);
         var output = this.hooks.CreateHook(scriptDelegate, scriptData->Functions->Function);
         output.Activate();
         output.Enable();
@@ -106,7 +133,7 @@ public unsafe class Mod : IMod {
     private static E pickRandom<E>(E[] array) {
         return array[Random.Next(0, array.Length)];
     }
-
+    
     private void loadLocalLanguageMap() {
         var languageMap = *this.GetGlobalVar("languageMap");
         var first = this.rnsReloaded.ExecuteCodeFunction("ds_map_find_first", null, null, [languageMap]) ?? null;
@@ -119,15 +146,19 @@ public unsafe class Mod : IMod {
     }
 
     private void randomizeInMap() {
-        var existingVals = new string[this.idsToRandomize.Length];
-        for (int i = 0; i < this.idsToRandomize.Length; i++) {
-            existingVals[i] = pickRandom(this.localLanguageMap.Values.ToArray());
+        var existingVals = new string[this.localLanguageMap.Count];
+        var keys = this.localLanguageMap.Keys.ToArray();
+        var values = this.localLanguageMap.Values.ToArray();
+        for (int i = 0; i < existingVals.Length; i++) {
+            existingVals[i] = pickRandom(values);
         }
         for (int i = 0; i < existingVals.Length; i++) {
-            this.dsMapSet("languageMap", this.idsToRandomize[i], existingVals[i]);
-            this.log($"setting {this.idsToRandomize[i]} to {existingVals[i]}");
+            this.dsMapSet("languageMap", keys[i], existingVals[i]);
+            //this.log($"setting {values[i]} to {existingVals[i]}");
         }
+
     }
+
     private string GetString(RValue rvalue) {
         return this.rnsReloaded.GetString(&rvalue);
     }
