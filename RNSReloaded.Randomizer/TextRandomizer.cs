@@ -34,6 +34,58 @@ public unsafe class TextRandomizer
 
     private IHook<ScriptDelegate> langStringInitHook;
 
+    class HBSInfoData {
+        string id;
+        string strId;
+        string name;
+        string description;
+        // 15 more RValues
+    }
+
+    // the items data array is of the format [ [ItemData: unlocked, ItemData: locked] ]
+    class ItemData {
+        string id;
+        int smth; //probably to do with the set but I need to actually check
+        string name;
+        string description;
+        //14 ints
+        // string ? is blank
+        //2 ints
+    }
+    
+    public class AllyData {
+        string id;
+        string name;
+        string description;
+        //3 ints
+        // a bunch of id strings for moves and upgrades
+        // 4 moves * (1 normal + 5 upgrades)
+    }
+
+    class EnemyData {
+        string id;
+        string name;
+        string description;
+        string anim;
+        //2 large nums, 2 ints, 1 float, 3 ints
+    }
+
+    class TrinketData {
+        string id;
+        string name;
+        string description;
+        string unlockCondition;
+        // a bunch of stuff
+    }
+
+    class NPCInfo {
+        string id;
+        string fullname;
+        string name;
+        string animData;
+        //ints
+    }
+
     public TextRandomizer(Config.Config conf, Utils utils)
     {
         this.config = conf;
