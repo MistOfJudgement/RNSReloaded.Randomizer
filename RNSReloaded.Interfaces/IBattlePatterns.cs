@@ -82,6 +82,10 @@ public unsafe interface IBattlePatterns {
         CInstance* self, CInstance* other, int? warningDelay = null, int? warnMsg = null, int? spawnDelay = null, int? fanAngle = null, Position? position = null, int? targetMask = null
     );
 
+    public void dark2_cr_circle(
+        CInstance* self, CInstance* other, int? spawnDelay = null, int? speed = null, int? angle = null, Position? position = null
+    );
+
     public void dark_targeted(
         CInstance* self, CInstance* other, int? warningDelay = null, int? spawnDelay = null, int? eraseDelay = null, double? scale = null, Position[]? positions = null
     );
@@ -154,6 +158,19 @@ public unsafe interface IBattlePatterns {
         Position? position = null
     );
 
+    public void knockback_line(
+        CInstance* self, CInstance* other, int? warningDelay = null, int? warnMsg = null, int? spawnDelay = null, int? kbAmount = null, Position? position = null, bool? horizontal = null, int? targetMask = null
+    );
+
+    public void light_crosswave(
+        CInstance* self, CInstance* other, int? warningDelay = null, int? spawnDelay = null, int? rotation = null,
+        Position? position = null
+    );
+
+    public void light_line(
+        CInstance* self, CInstance* other, int? warningDelay = null, int? spawnDelay = null, Position? position = null, int? lineAngle = 0, int? angle = null, int? spd = null, int? lineLength = null, int? numBullets = null, int? type = null, bool? showWarning = null
+    );
+
     public void line_direction(
         CInstance* self, CInstance* other, int? warningDelay = null, int? spawnDelay = null, int? width = null, PosRot[]? positions = null
     );
@@ -174,6 +191,10 @@ public unsafe interface IBattlePatterns {
 
     public void move_position_synced(
         CInstance* self, CInstance* other, int? spawnDelay = null, bool? resetAnim = null, int? duration = null, Position? position = null
+    );
+
+    public void painsplit(
+        CInstance* self, CInstance* other, bool isPrimary
     );
 
     public void prscircle(
