@@ -29,7 +29,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RNSReloaded.Ice", "RNSReloa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RNSReloaded.DoubleTime", "RNSReloaded.DoubleTime\RNSReloaded.DoubleTime.csproj", "{FE5E1C54-EEB9-4B4B-9D22-B682E46F65EF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RNSReloaded.Randomizer", "RNSReloaded.Randomizer\RNSReloaded.Randomizer.csproj", "{2B557491-346E-4C8C-AC03-397FCB9DF40D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RNSReloaded.TextRandomizer", "RNSReloaded.Randomizer\RNSReloaded.TextRandomizer.csproj", "{2B557491-346E-4C8C-AC03-397FCB9DF40D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
