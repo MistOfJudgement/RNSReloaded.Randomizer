@@ -120,6 +120,7 @@ public unsafe class Mod : IMod {
     }
     private void CheckAllyData() {
         Dictionary<string, string> allyDataMap = new Dictionary<string, string>();
+        List<(string, string)> allyDatas = new List<(string, string)>();
         RValue* allyData = this.GetGlobalVar("allyData");
         int length = (int) this.utils.rnsReloaded.ArrayGetLength(allyData).GetValueOrDefault().Real;
         for (int i = 0; i < length; i++) {
@@ -129,6 +130,14 @@ public unsafe class Mod : IMod {
             string name = this.utils.rnsReloaded.GetString(this.utils.rnsReloaded.ArrayGetEntry(entry, 1));
             this.utils.Log($"id {id} name {name}");
             allyDataMap[id] = name;
+            allyDatas.Add((id, name));
+        }
+
+        //lets try randomizing these
+        for (int i = 0; i < allyDatas.Count;i++) {
+            RValue* entry = this.utils.rnsReloaded.ArrayGetEntry(allyData, i);
+            this.utils.rnsReloaded.CreateString(
+                this.utils.rnsReloaded.ArrayGetEntry(entry, 1), allyDatas[i].Item2 + " DEBUG ");
         }
     }
 
