@@ -50,6 +50,7 @@ public unsafe class Mod : IMod {
     private IHook<ScriptDelegate>? makeWarningHookT;
     private IHook<ScriptDelegate>? makeWarningHookP;
     private IHook<ScriptDelegate> hbsReloadHook;
+    private IHook<ScriptDelegate> langReloadHook;
     private Configurator configurator = null!;
     private Config.Config config = null!;
 
@@ -88,7 +89,7 @@ public unsafe class Mod : IMod {
             this.langStringsInitHook = this.hookScript("scr_lang_strings_init", this.InitStringsDetour);
             this.makeWarningHookT = this.hookScript("scrbp_warning_msg_t", this.WarningDetour(()=>this.makeWarningHookT!));
             this.makeWarningHookP = this.hookScript("scrbp_warning_msg_p", this.WarningDetour(()=> this.makeWarningHookP!));
-
+            this.langReloadHook = this.hookScript("scr_langreload_ally", this.langReload);
         } else {
             this.log("Unable to setup hooks, exiting..");
             throw new Exception("Failed to get rnsReloaded");
@@ -106,28 +107,35 @@ public unsafe class Mod : IMod {
             //}
             //this.utils.applyMap(Enum.GetName(DataMap.hbsDataKeyMap)!, HBS);
             //this.rnsReloaded.ExecuteScript("scr_langreload_hbs", self, other, 0, null);
-            Dictionary<string, string> allyDataMap = new Dictionary<string, string>();
-            RValue* allyData = this.GetGlobalVar("allyData");
-            int length = (int) this.utils.rnsReloaded.ArrayGetLength(allyData).GetValueOrDefault().Real;
-            for (int i = 0; i < length; i++) {
-                RValue* entry = this.utils.rnsReloaded.ArrayGetEntry(allyData, i);
-                this.utils.Log($"elem {i} type {entry->Type}");
-                string id = this.utils.rnsReloaded.GetString(this.utils.rnsReloaded.ArrayGetEntry(entry, 0));
-                string name = this.utils.rnsReloaded.GetString(this.utils.rnsReloaded.ArrayGetEntry(entry, 1));
-                this.utils.Log($"id {id} name {name}");
-                allyDataMap[id] = name;
-            }
+            
             this.rnsReloaded.ExecuteScript("scr_stringsprite_load_all", self, other, 0, null);
             this.log("refreshing");
                 return originalFunction().OriginalFunction(self, other, ret, argc, argv);
         };
+    }
+    private RValue* langReload(CInstance* self, CInstance* other, RValue* ret, int argc, RValue** argv) {
+        var output = this.langReloadHook.OriginalFunction(self, other, ret, argc, argv);
+        this.CheckAllyData();
+        return output;
+    }
+    private void CheckAllyData() {
+        Dictionary<string, string> allyDataMap = new Dictionary<string, string>();
+        RValue* allyData = this.GetGlobalVar("allyData");
+        int length = (int) this.utils.rnsReloaded.ArrayGetLength(allyData).GetValueOrDefault().Real;
+        for (int i = 0; i < length; i++) {
+            RValue* entry = this.utils.rnsReloaded.ArrayGetEntry(allyData, i);
+            this.utils.Log($"elem {i} type {entry->Type}");
+            string id = this.utils.rnsReloaded.GetString(this.utils.rnsReloaded.ArrayGetEntry(entry, 0));
+            string name = this.utils.rnsReloaded.GetString(this.utils.rnsReloaded.ArrayGetEntry(entry, 1));
+            this.utils.Log($"id {id} name {name}");
+            allyDataMap[id] = name;
+        }
     }
 
     private RValue* InitStringsDetour(CInstance* self, CInstance* other, RValue* returnValue, int argc, RValue** argv) {
         var ret = this.langStringsInitHook!.OriginalFunction(self, other, returnValue, argc, argv);
         this.loadLocalLanguageMap();
         this.randomizeInMap();
-
 
         return ret;
     }
