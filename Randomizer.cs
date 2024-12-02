@@ -97,19 +97,17 @@ public unsafe class Randomizer {
     private readonly List<TrinketData> trinketData = [];
     private readonly List<NPCInfo> npcInfoData = [];
 
-    public Randomizer() {
-
+    public Randomizer(IRNSReloaded rns) {
+        this.LoadLanguageMap(rns);
+        this.LoadAllData(rns);
+        this.populateCompleteMap();
     }
 
     public void Randomize(
         IRNSReloaded rns,
         ILoggerV1 logger
         ) {
-        //Get all the strings that need to be randomized
-        //put them in a map ( I guess it could just be an array )
-        //  optional: based on some filter
-        this.LoadLanguageMap(rns);
-        this.LoadAllData(rns);
+
         //shuffle said map
         //  optional: maybe this step is based on a filter
         //for each entry
@@ -119,7 +117,6 @@ public unsafe class Randomizer {
         
         Utils.Print($"Loaded {this.itemData.Count} values into itemData");
 
-        this.populateCompleteMap();
         Utils.Print($"Complete map has {this.completeMap.Count} values");
 
         //foreach (var kvp in this.completeMap) {
@@ -128,13 +125,16 @@ public unsafe class Randomizer {
         var toApply = this.randomize(CombinedPredicate(new List<Predicate<KeyValuePair<string, string>>> {
             kvp => kvp.Value.Length > 0,
             kvp => !kvp.Value.Contains("_"),
-            kvp => kvp.Key.StartsWith("hbs")
+            //kvp => kvp.Key.StartsWith("hbs")
         }));
         this.ApplyChanges(toApply, rns);
 
     }
 
-
+    public void ReplaceWithStrId(IRNSReloaded rns) {
+        var transformation = this.completeMap.Select(kv => (kv.Key, kv.Key)).ToDictionary();
+        this.ApplyChanges(transformation, rns);
+    }
     public void LoadLanguageMap(IRNSReloaded rns) {
         //o h my god do it manually, then tidy it later
         //var global = rns.GetGlobalInstance();

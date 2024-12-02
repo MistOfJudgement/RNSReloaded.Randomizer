@@ -16,7 +16,7 @@ namespace RNSReloaded.Randomizer;
 
 public unsafe class Mod : IMod {
     private Configurator? configurator;
-    private Config.Config? config;
+    private Config.Config config = null!;
     private WeakReference<IRNSReloaded>? rnsReloadedRef;
     private WeakReference<IReloadedHooks>? hooksRef;
     private ILoggerV1 logger;
@@ -62,8 +62,13 @@ public unsafe class Mod : IMod {
                                      int argc,
                                      RValue** argv) {
         if (this.rnsReloadedRef != null && this.rnsReloadedRef.TryGetTarget(out var rns)) {
-            var randomizer = new Randomizer();
-            randomizer.Randomize(rns, this.logger);
+            var randomizer = new Randomizer(rns);
+            if (this.config.ShowStringIds) {
+                randomizer.ReplaceWithStrId(rns);
+            } else {
+
+                randomizer.Randomize(rns, this.logger);
+            }
         }
         this.langHook.OriginalFunction.Invoke(self, other, ret, argc, argv);
         return ret;
