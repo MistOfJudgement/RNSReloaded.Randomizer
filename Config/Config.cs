@@ -8,4 +8,8 @@ public class Config : Configurable<Config> {
     [Description("Remaps all text to show the string ids")]
     public bool ShowStringIds { get; set; } = false;
 
+    [Category("TextRandomizer"), DefaultValue(true)]
+    [Description("Only Randomize text that warns/informs the player")]
+    public bool OnlyRandomizeBattleEffects { get; set; } = true;
+
 }

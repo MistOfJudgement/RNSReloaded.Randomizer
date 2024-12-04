@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Collections.Frozen;
 using System.Xml.Linq;
 using System.Reflection;
+using RNSReloaded.Randomizer.Config;
 namespace RNSReloaded.Randomizer;
 
 //At some point I'm going to create a wrapper class over IRNSReloaded to have safe accessor
@@ -105,7 +106,8 @@ public unsafe class Randomizer {
 
     public void Randomize(
         IRNSReloaded rns,
-        ILoggerV1 logger
+        ILoggerV1 logger,
+        List<Predicate<KeyValuePair<string, string>>> rules
         ) {
 
         //shuffle said map
@@ -122,11 +124,13 @@ public unsafe class Randomizer {
         //foreach (var kvp in this.completeMap) {
         //    Utils.Print($"({kvp.Key}, {kvp.Value})");
         //}
-        var toApply = this.randomize(CombinedPredicate(new List<Predicate<KeyValuePair<string, string>>> {
-            kvp => kvp.Value.Length > 0,
-            kvp => !kvp.Value.Contains("_"),
-            //kvp => kvp.Key.StartsWith("hbs")
-        }));
+
+        var toApply = this.randomize(CombinedPredicate(rules));
+        //    new List<Predicate<KeyValuePair<string, string>>> {
+        //    kvp => kvp.Value.Length > 0,
+        //    kvp => !kvp.Value.Contains("_"),
+        //    //kvp => kvp.Key.StartsWith("hbs")
+        //}));
         this.ApplyChanges(toApply, rns);
 
     }

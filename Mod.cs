@@ -12,6 +12,7 @@ using System.Diagnostics;
 using RNSReloaded;
 using System.Runtime.ExceptionServices;
 using RNSReloaded.Randomizer.Config;
+using System.Text.RegularExpressions;
 namespace RNSReloaded.Randomizer;
 
 public unsafe class Mod : IMod {
@@ -66,8 +67,15 @@ public unsafe class Mod : IMod {
             if (this.config.ShowStringIds) {
                 randomizer.ReplaceWithStrId(rns);
             } else {
-
-                randomizer.Randomize(rns, this.logger);
+                var rules = new List<Predicate<KeyValuePair<string, string>>> {
+                    kvp => kvp.Value.Length > 0,
+                    kvp => !kvp.Value.Contains("_"),
+                    //kvp => kvp.Key.StartsWith("hbs")
+                };
+                if (this.config.OnlyRandomizeBattleEffects) {
+                    rules.Add(kvp => kvp.Key.StartsWith("languageMap@eff_") || (kvp.Key.StartsWith("hbsInfo@") && kvp.Key.EndsWith("2")));
+                }
+                randomizer.Randomize(rns, this.logger, rules);
             }
         }
         this.langHook.OriginalFunction.Invoke(self, other, ret, argc, argv);
