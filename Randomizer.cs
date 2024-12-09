@@ -97,11 +97,27 @@ public unsafe class Randomizer {
     private readonly List<EnemyData> enemyData = [];
     private readonly List<TrinketData> trinketData = [];
     private readonly List<NPCInfo> npcInfoData = [];
+    private bool loaded;
+    public Randomizer() {
+        this.loaded = false;
 
-    public Randomizer(IRNSReloaded rns) {
+    }
+    public void Load(IRNSReloaded rns) {
+        if (this.loaded) return;
+        Utils.Print($"Loaded {this.languageMap.Count} values into the lang map");
+        Utils.Print($"Loaded {this.allyData.Count} value into allydata");
+
+        Utils.Print($"Loaded {this.itemData.Count} values into itemData");
+
+        Utils.Print($"Complete map has {this.completeMap.Count} values");
         this.LoadLanguageMap(rns);
         this.LoadAllData(rns);
         this.populateCompleteMap();
+        this.loaded = true;
+    }
+
+    public void Reset() {
+        this.loaded = false;
     }
 
     public void Randomize(
@@ -114,12 +130,6 @@ public unsafe class Randomizer {
         //  optional: maybe this step is based on a filter
         //for each entry
         //reverse the map key to the data source
-        logger.PrintMessage($"Loaded {this.languageMap.Count} values into the lang map", Color.Wheat);
-        logger.PrintMessage($"Loaded {this.allyData.Count} value into allydata", Color.Wheat);
-        
-        Utils.Print($"Loaded {this.itemData.Count} values into itemData");
-
-        Utils.Print($"Complete map has {this.completeMap.Count} values");
 
         //foreach (var kvp in this.completeMap) {
         //    Utils.Print($"({kvp.Key}, {kvp.Value})");
@@ -131,6 +141,7 @@ public unsafe class Randomizer {
         //    kvp => !kvp.Value.Contains("_"),
         //    //kvp => kvp.Key.StartsWith("hbs")
         //}));
+        Utils.Print($"{toApply.Count} value to be changed");
         this.ApplyChanges(toApply, rns);
 
     }

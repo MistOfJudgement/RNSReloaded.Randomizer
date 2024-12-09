@@ -5,7 +5,7 @@ namespace RNSReloaded.Randomizer.Config;
 public class Config : Configurable<Config> {
 
     [Category("TextRandomizer"), DefaultValue(false)]
-    [Description("Remaps all text to show the string ids")]
+    [Description("Remaps all text to show the string ids. Has problems and could crash")]
     public bool ShowStringIds { get; set; } = false;
 
     [Category("TextRandomizer"), DefaultValue(true)]
